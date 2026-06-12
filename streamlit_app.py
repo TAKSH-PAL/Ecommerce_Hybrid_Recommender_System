@@ -484,7 +484,7 @@ left, right = st.columns([3, 1])
 with left:
     query = st.text_input(
         "Product search",
-        value="Hempz",
+        value="",
         placeholder="Try Hempz, Gillette, Crest, lipstick, toothpaste...",
     )
 with right:
