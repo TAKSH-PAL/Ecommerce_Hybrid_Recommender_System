@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Recommendations</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-store.css') }}">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg global-nav">
+    <a class="navbar-brand" href="{{ url_for('index') }}">Ecommerce Recommendation System</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-lg-center">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('main') }}">Recommendations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-pill nav-pill-outline" href="#" data-toggle="modal" data-target="#signupModal">Sign Up</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-pill nav-pill-primary" href="#" data-toggle="modal" data-target="#signinModal">Sign In</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="sub-nav">
+    <div class="sub-nav-inner">
+      <p class="sub-nav-title">Recommendations</p>
+      <div class="sub-nav-links">
+        <a href="{{ url_for('index') }}#trending">Trending</a>
+        <a href="#results">Results</a>
+        <a class="btn-apple" href="#search">Search</a>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section id="search" class="search-panel">
+      <div class="search-shell">
+        <p class="section-kicker">Content-based discovery</p>
+        <h1 class="section-title">Search a product. Get similar picks.</h1>
+        <p class="section-copy">Enter a product name from the dataset and choose how many recommendations to display.</p>
+        <form class="search-form" action="/recommendations#results" method="post">
+          <input type="text" class="form-control" name="prod" placeholder="Search for products..." required>
+          <input type="number" class="form-control" name="nbr" placeholder="Count" min="1" max="20" required>
+          <button class="btn-apple" type="submit">Search</button>
+        </form>
+      </div>
+
+      {% if message %}
+      <p class="message">{{ message }}</p>
+      {% endif %}
+    </section>
+
+    {% if content_based_rec is defined and not content_based_rec.empty %}
+    <section id="results" class="product-section">
+      <div class="section-header">
+        <p class="section-kicker">Recommended products</p>
+        <h2 class="section-title">Similar items, ready to compare.</h2>
+        <p class="section-copy">The model results keep the essential shopping details visible without crowding the product imagery.</p>
+        {% if matched_product %}
+        <p class="message">Showing recommendations for {{ matched_product }}</p>
+        {% endif %}
+      </div>
+      <div class="product-grid">
+        {% for index, product in content_based_rec.iterrows() %}
+        <article class="product-card">
+          <div>
+            <div class="product-media">
+              <img src="{{ product_image_url(product['ImageURL']) }}" alt="{{ product['Name'] }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/img_1.png') }}';">
+            </div>
+            <h3 class="product-title">{{ truncate(product['Name'], 28) }}</h3>
+            <p class="product-meta">Brand: {{ product['Brand'] }}</p>
+            <p class="product-meta">Rating: {{ product['Rating'] }} · {{ product['ReviewCount'] }} reviews</p>
+            <p class="product-price">From ${{ random_price }}</p>
+          </div>
+          <button type="button" class="btn-apple" data-toggle="modal" data-target="#productModal{{ index }}">Buy</button>
+        </article>
+
+        <div class="modal fade" id="productModal{{ index }}" tabindex="-1" role="dialog" aria-labelledby="productModalLabel{{ index }}" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel{{ index }}">{{ product['Name'] }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="row align-items-center">
+                  <div class="col-md-5 mb-4 mb-md-0 text-center">
+                    <img src="{{ product_image_url(product['ImageURL']) }}" class="modal-product-image" alt="{{ product['Name'] }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/img_1.png') }}';">
+                  </div>
+                  <div class="col-md-7 text-left">
+                    <p><strong>Brand:</strong> {{ product['Brand'] }}</p>
+                    <p><strong>Review Count:</strong> {{ product['ReviewCount'] }}</p>
+                    <p><strong>Rating:</strong> {{ product['Rating'] }}</p>
+                    <p><strong>Price:</strong> ${{ random_price }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn-apple-outline" data-dismiss="modal">Close</button>
+                <button type="button" class="btn-apple">Add to Cart</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <section id="results" class="product-section dark">
+      <div class="section-header">
+        <p class="section-kicker">Ready when you are</p>
+        <h2 class="section-title">Your recommendations will appear here.</h2>
+        <p class="section-copy">Use the search above to ask the model for similar products from the catalog.</p>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <div class="modal fade" id="signupModal" tabindex="-1" role="dialog" aria-labelledby="signupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="signupModalLabel">Sign Up</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form class="auth-form" action="/signup" method="post">
+            <div class="form-group text-left">
+              <label for="username">Username</label>
+              <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group text-left">
+              <label for="email">Email</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="form-group text-left">
+              <label for="password">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn-apple">Sign Up</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="signinModal" tabindex="-1" role="dialog" aria-labelledby="signinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="signinModalLabel">Sign In</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form class="auth-form" action="/signin" method="post">
+            <div class="form-group text-left">
+              <label for="signinUsername">Username</label>
+              <input type="text" class="form-control" id="signinUsername" name="signinUsername" required>
+            </div>
+            <div class="form-group text-left">
+              <label for="signinPassword">Password</label>
+              <input type="password" class="form-control" id="signinPassword" name="signinPassword" required>
+            </div>
+            <button type="submit" class="btn-apple">Sign In</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="row">
+        <div class="col-md-3 col-sm-6 mb-4">
+          <h5>About Us</h5>
+          <p>A Flask storefront with machine-learning recommendations for product discovery.</p>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+          <h5>Quick Links</h5>
+          <ul>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('main') }}">Recommendations</a></li>
+            <li><a href="{{ url_for('index') }}#trending">Trending Products</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+          <h5>Support</h5>
+          <ul>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+          <h5>Contact Us</h5>
+          <address>
+            Ecommerce Recommendation System<br>
+            <i class="fas fa-phone"></i> Phone: +1234567890<br>
+            <i class="fas fa-envelope"></i> Email: info@example.com
+          </address>
+        </div>
+      </div>
+      <p class="footer-rule">&copy; 2026 Ecommerce Recommendation System. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  {% if content_based_rec is defined or message %}
+  <script>
+    window.addEventListener('load', function() {
+      var results = document.getElementById('results');
+      if (results) {
+        results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  </script>
+  {% endif %}
+</body>
+</html>
